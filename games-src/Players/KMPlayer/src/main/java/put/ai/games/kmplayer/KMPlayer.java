@@ -6,6 +6,8 @@ package put.ai.games.kmplayer;
 
 import java.util.List;
 import java.util.Random;
+
+import org.jetbrains.annotations.Nullable;
 import put.ai.games.game.Board;
 import put.ai.games.game.Move;
 import put.ai.games.game.Player;
@@ -41,7 +43,7 @@ public class KMPlayer extends Player {
             Float value;
             if(depth==0) value = evaluateBoard(board);
             else {
-                value = checkMove(board,depth,false);
+                value = checkMove(board,depth,false, null);
                 if(value==null) {
                     depth=0;
                     value = evaluateBoard(board);
@@ -54,9 +56,11 @@ public class KMPlayer extends Player {
         }
         return selectedMove;
     }
-    private Float checkMove(Board b, int depth, boolean myMove){
+
+    @Nullable
+    private Float checkMove(Board b, int depth, boolean myMove, Float cutValue){
         depth--;
-        if(depth>0 && System.currentTimeMillis()-startTime > sqrt(getTime())) {
+        if(depth>0 && System.currentTimeMillis()-startTime > getTime()/2) {
             this.maxDepth--;
             return null;
         }
@@ -74,17 +78,23 @@ public class KMPlayer extends Player {
             Float value = 0f;
             if(depth==0) value = evaluateBoard(board);
             else {
-                value = checkMove(board, depth, !myMove);
+                value = checkMove(board, depth, !myMove, returnValue);
                 if(value==null) {
                     depth=0;
                     value = evaluateBoard(board);
+                } else {
+                    if(!myMove && value <= evaluateBoard(board)) return value; //odcięcie alfa
                 }
             }
-            if(myMove && value>=returnValue) {
+            if(cutValue!=null){ //odcięcia
+                if(myMove && value>=cutValue) return cutValue; //odcięcie alfa
+                if(!myMove && value<=cutValue) return cutValue; //odcięcie beta
+            }
+            if(myMove && value>returnValue) {
                 if(value == this.maxValue) return this.maxValue;
                 returnValue=value;
             }
-            if(!myMove && value<=returnValue) returnValue=value;
+            if(!myMove && value<returnValue) returnValue=value;
         }
         return returnValue;
     }
@@ -99,7 +109,7 @@ public class KMPlayer extends Player {
         this.maxValue = b.getSize()*b.getSize();
         this.startTime = System.currentTimeMillis();
         Move move = selectMove(b, this.maxDepth);
-        if( (double)(System.currentTimeMillis()-startTime) < sqrt(getTime())) this.maxDepth++;
+        if( (double)(System.currentTimeMillis()-startTime) < getTime()/2) this.maxDepth++;
         return move;
     }
 

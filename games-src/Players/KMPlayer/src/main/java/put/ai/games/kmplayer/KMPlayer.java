@@ -77,8 +77,6 @@ public class KMPlayer extends Player {
                 if(value==null) {
                     depth=0;
                     value = evaluateBoard(board);
-                } else {
-                    if(!myMove && value <= evaluateBoard(board)) return value; //odcięcie alfa
                 }
             }
             if(cutValue!=null){ //odcięcia

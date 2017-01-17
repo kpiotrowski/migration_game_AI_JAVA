@@ -7,13 +7,9 @@ package put.ai.games.kmplayer;
 import java.util.List;
 import java.util.Random;
 
-import org.jetbrains.annotations.Nullable;
 import put.ai.games.game.Board;
 import put.ai.games.game.Move;
 import put.ai.games.game.Player;
-
-import static java.lang.Math.cbrt;
-import static java.lang.Math.sqrt;
 
 public class KMPlayer extends Player {
 
@@ -23,7 +19,7 @@ public class KMPlayer extends Player {
 
     /**
      * Funcka oceny stanu
-     * @param board
+     * @param board plansza
      * @return Wartość float im większa tym lepsza nasza sutuacja
      */
     private Float evaluateBoard(Board board){
@@ -57,7 +53,6 @@ public class KMPlayer extends Player {
         return selectedMove;
     }
 
-    @Nullable
     private Float checkMove(Board b, int depth, boolean myMove, Float cutValue){
         depth--;
         if(depth>0 && System.currentTimeMillis()-startTime > getTime()/2) {

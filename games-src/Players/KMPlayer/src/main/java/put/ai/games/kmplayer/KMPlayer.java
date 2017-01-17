@@ -14,8 +14,9 @@ import put.ai.games.game.Player;
 public class KMPlayer extends Player {
 
     private long startTime;
-    private int maxDepth=1;
+    private int maxDepth=5;
     private float maxValue;
+    private boolean stop;
 
     /**
      * Funcka oceny stanu
@@ -40,7 +41,7 @@ public class KMPlayer extends Player {
             if(depth==0) value = evaluateBoard(board);
             else {
                 value = checkMove(board,depth,false, null);
-                if(value==null) {
+                if(value==null || this.stop) {
                     depth=0;
                     value = evaluateBoard(board);
                 }
@@ -57,6 +58,7 @@ public class KMPlayer extends Player {
         depth--;
         if(depth>0 && System.currentTimeMillis()-startTime > getTime()/2) {
             this.maxDepth--;
+            this.stop = true;
             return null;
         }
         List<Move> moves;
@@ -74,7 +76,7 @@ public class KMPlayer extends Player {
             if(depth==0) value = evaluateBoard(board);
             else {
                 value = checkMove(board, depth, !myMove, returnValue);
-                if(value==null) {
+                if(value==null || this.stop) {
                     depth=0;
                     value = evaluateBoard(board);
                 }
@@ -83,11 +85,11 @@ public class KMPlayer extends Player {
                 if(myMove && value>=cutValue) return cutValue; //odcięcie alfa
                 if(!myMove && value<=cutValue) return cutValue; //odcięcie beta
             }
-            if(myMove && value>returnValue) {
-                if(value == this.maxValue) return this.maxValue;
+            if(myMove && value>=returnValue) {
+                //if(value == this.maxValue) return this.maxValue;
                 returnValue=value;
             }
-            if(!myMove && value<returnValue) returnValue=value;
+            if(!myMove && value<=returnValue) returnValue=value;
         }
         return returnValue;
     }
@@ -99,6 +101,7 @@ public class KMPlayer extends Player {
 
     @Override
     public Move nextMove(Board b) {
+        stop=false;
         this.maxValue = b.getSize()*b.getSize();
         this.startTime = System.currentTimeMillis();
         Move move = selectMove(b, this.maxDepth);

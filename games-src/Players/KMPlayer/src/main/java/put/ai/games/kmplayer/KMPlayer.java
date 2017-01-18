@@ -14,7 +14,7 @@ import put.ai.games.game.Player;
 public class KMPlayer extends Player {
 
     private long startTime;
-    private int maxDepth=5;
+    private int maxDepth=2;
     private float maxValue;
     private boolean stop;
 
@@ -32,21 +32,16 @@ public class KMPlayer extends Player {
     }
 
     private Move selectMove(Board b, int depth){
-        float max = 0;
+        Float max = null;
         Move selectedMove = null;
         for(Move m :b.getMovesFor(this.getColor())){
             Board board = b.clone();
             board.doMove(m);
             Float value;
-            if(depth==0) value = evaluateBoard(board);
-            else {
-                value = checkMove(board,depth,false, null);
-                if(value==null || this.stop) {
-                    depth=0;
-                    value = evaluateBoard(board);
-                }
-            }
-            if(value>=max){
+            if(depth==0 || this.stop) value = evaluateBoard(board);
+            else value = checkMove(board,depth,false, null);
+
+            if(max==null || value>max){
                 max = value;
                 selectedMove=m;
             }
@@ -56,10 +51,10 @@ public class KMPlayer extends Player {
 
     private Float checkMove(Board b, int depth, boolean myMove, Float cutValue){
         depth--;
-        if(depth>0 && System.currentTimeMillis()-startTime > getTime()/2) {
+        if(depth>0 && System.currentTimeMillis()-startTime > getTime()/2 && !stop) {
             this.maxDepth--;
             this.stop = true;
-            return null;
+            depth=0;
         }
         List<Move> moves;
         if(!myMove) moves = b.getMovesFor(getOpponent(this.getColor()));
@@ -73,23 +68,22 @@ public class KMPlayer extends Player {
             Board board = b.clone();
             board.doMove(m);
             Float value = 0f;
-            if(depth==0) value = evaluateBoard(board);
+            if(depth==0 || this.stop) value = evaluateBoard(board);
             else {
                 value = checkMove(board, depth, !myMove, returnValue);
-                if(value==null || this.stop) {
-                    depth=0;
-                    value = evaluateBoard(board);
-                }
             }
             if(cutValue!=null){ //odcięcia
                 if(myMove && value>=cutValue) return cutValue; //odcięcie alfa
                 if(!myMove && value<=cutValue) return cutValue; //odcięcie beta
             }
             if(myMove && value>=returnValue) {
-                //if(value == this.maxValue) return this.maxValue;
+                if(value == this.maxValue) return this.maxValue;
                 returnValue=value;
             }
-            if(!myMove && value<=returnValue) returnValue=value;
+            if(!myMove && value<=returnValue) {
+                if(value == 0) return 0f;
+                returnValue=value;
+            }
         }
         return returnValue;
     }
@@ -101,10 +95,12 @@ public class KMPlayer extends Player {
 
     @Override
     public Move nextMove(Board b) {
-        stop=false;
-        this.maxValue = b.getSize()*b.getSize();
         this.startTime = System.currentTimeMillis();
+
+        this.stop=false;
+        this.maxValue = b.getSize()*b.getSize();
         Move move = selectMove(b, this.maxDepth);
+
         if( (double)(System.currentTimeMillis()-startTime) < getTime()/2) this.maxDepth++;
         return move;
     }
